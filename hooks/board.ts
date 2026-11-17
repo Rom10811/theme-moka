@@ -80,12 +80,12 @@ const outline = (svg: string) => {
 }
 
 const LIGHT = {
-  cork: '#bb8d5e', g1: '#d1a372', g2: '#9c7147', vig: '0.16',
+  cork: '#a87749', g1: '#bf8d5a', g2: '#7a5232', vig: '0.2',
   paper: '#f5ecda', paperEdge: '#e9dcc2', fringe: '#fcf8ee', fiber: '#b89a72', ring: '#8a5a2b', ringOp: '0.13',
   veil: '0', lamp: '0', bulb: '#ffd98f', idle: '1',
 }
 const DARK = {
-  cork: '#b88a5c', g1: '#cfa06f', g2: '#9b7047', vig: '0.55',
+  cork: '#a27246', g1: '#b98654', g2: '#734c2e', vig: '0.55',
   paper: '#2b241d', paperEdge: '#231d17', fringe: '#4a3f33', fiber: '#8a7559', ring: '#c79a63', ringOp: '0.1',
   veil: '0.6', lamp: '0.3', bulb: '#ffd98f', idle: '1',
 }
@@ -292,106 +292,148 @@ const WRISTBAND =
   `<rect x="-14" y="14" width="28" height="18" rx="3" class="wristClip"/>` +
   `<text x="0" y="-34" text-anchor="middle" class="type wristInk" font-size="9" letter-spacing="1">PASS 1 JOUR</text>`
 
+// ---------- the counter's pieces ----------
+
+// Wood paneling: plank seams every 80 units, wavy grain between them.
+const WOOD = (() => {
+  const next = random(7)
+  let s = `<path d="M0 0 V160 M80 0 V160" class="seam"/>`
+
+  for (let i = 0; i < 14; i += 1) {
+    const x = r1(4 + next() * 72 + (i % 2) * 80)
+    const w = r1(2 + next() * 4)
+    s += `<path d="M${x} 0 C ${r1(x + w)} 40 ${r1(x - w)} 90 ${x} 160" class="${next() < 0.5 ? 'g1' : 'g2'} grain"/>`
+  }
+  s += `<ellipse cx="${r1(20 + next() * 40)}" cy="${r1(30 + next() * 100)}" rx="3" ry="9" class="g2 knot"/>`
+
+  return s
+})()
+
+// A split-flap departures board: each letter on its own flap.
+const flapRow = (y: number, words: string, first: number) =>
+  [...words].map((ch, i) => {
+    const x = 12 + i * 21
+    const n = first + i
+
+    return (
+      `<g class="flap f${n % 5}" style="animation-delay:${r1(-n * 0.23)}s"><rect x="${x}" y="${y}" width="19" height="28" rx="2" class="cell"/>` +
+      `<path d="M${x} ${y + 14} h19" class="cellCut"/>` +
+      (ch === ' ' ? '' : `<text x="${x + 9.5}" y="${y + 20}" text-anchor="middle" class="type flapInk" font-size="16">${ch}</text>`) +
+      `</g>`
+    )
+  }).join('')
+
+const FLAPS =
+  `<rect width="320" height="196" rx="8" class="board"/>` +
+  `<text x="160" y="26" text-anchor="middle" class="type boardHead" font-size="11" letter-spacing="2">PROCHAINES SÉANCES</text>` +
+  flapRow(40, '14:30 VISITE', 0) + flapRow(84, '15:00 ATELIER', 12) + flapRow(128, '16:15 CONCERT', 25) +
+  `<circle cx="16" cy="178" r="4" class="lampOk"/><text x="28" y="182" class="type boardHead" font-size="9">À L’HEURE</text>`
+
+// A roll of numbered entry tickets, the strip hanging down from it.
+const ROLL = (() => {
+  let strip = ''
+
+  for (let i = 0; i < 6; i += 1) {
+    const y = 40 + i * 50
+    strip +=
+      `<rect x="-44" y="${y}" width="88" height="50" class="rollTk"/>` +
+      `<path d="M-44 ${y} h88" class="rollCut"/>` +
+      `<text x="0" y="${y + 22}" text-anchor="middle" class="type rollInk" font-size="11" letter-spacing="1">ENTRÉE</text>` +
+      `<text x="0" y="${y + 40}" text-anchor="middle" class="type rollInk" font-size="10">N° 04${17 + i}</text>`
+  }
+
+  return (
+    `<svg x="-60" y="30" width="120" height="290" overflow="hidden"><g transform="translate(60 -30)"><g class="feed">${strip}</g></g></svg>` +
+    `<circle r="44" class="rollTk"/><circle r="44" fill="none" class="rollEdge"/><circle r="30" fill="none" class="rollEdge"/>` +
+    `<circle r="14" class="rollCore"/><circle r="5" class="hole"/>`
+  )
+})()
+
+// A station clock; the second hand sweeps, faster while Claude works.
+const CLOCK = (() => {
+  let ticks = ''
+
+  for (let i = 0; i < 12; i += 1) {
+    const a = (i * Math.PI) / 6
+    const r0 = i % 3 ? 58 : 52
+    ticks += `<path d="M${r1(Math.sin(a) * r0)} ${r1(-Math.cos(a) * r0)} L${r1(Math.sin(a) * 64)} ${r1(-Math.cos(a) * 64)}" class="tickMark" stroke-width="${i % 3 ? 2 : 4}"/>`
+  }
+
+  return (
+    `<path d="M0 -150 V-78" class="rod"/><circle r="76" class="clockRim"/><circle r="70" class="clockFace"/>${ticks}` +
+    `<path d="M0 6 V-38" class="hand" stroke-width="6" transform="rotate(-30)"/><path d="M0 8 V-56" class="hand" stroke-width="4" transform="rotate(150)"/>` +
+    `<g class="sec"><path d="M0 14 V-58" class="secHand"/><circle cy="-46" r="5" class="secDot"/></g><circle r="5" class="secDot"/>`
+  )
+})()
+
+// The ticket window: an arched frame, glass, bars and its number plate.
+const WINDOW =
+  `<path d="M0 260 V100 A130 100 0 0 1 260 100 V260 Z" class="frame2"/>` +
+  `<path d="M18 246 V104 A112 86 0 0 1 242 104 V246 Z" class="glass"/>` +
+  `<path d="M70 30 V246 M130 14 V246 M190 30 V246" class="bars"/>` +
+  `<path d="M40 70 L80 150 M150 40 L210 160" class="shine"/>` +
+  `<rect x="-14" y="236" width="288" height="34" rx="4" class="sill"/>` +
+  `<rect x="74" y="168" width="112" height="44" rx="6" class="plate"/>` +
+  `<text x="130" y="196" text-anchor="middle" class="type plateInk" font-size="14" letter-spacing="2">GUICHET 1</text>` +
+  `<rect x="96" y="118" width="68" height="28" rx="4" class="openTag"/>` +
+  `<text x="130" y="138" text-anchor="middle" class="hand openInk" font-size="17">ouvert</text>`
+
+// The front-desk bell.
+const BELL =
+  `<ellipse cx="0" cy="44" rx="58" ry="10" fill="#000" opacity=".2"/>` +
+  `<rect x="-56" y="28" width="112" height="16" rx="5" class="bellBase"/>` +
+  `<path d="M-46 30 A46 44 0 0 1 46 30 Z" class="bellDome"/><path d="M-26 6 A30 30 0 0 1 4 -10" class="bellShine"/>` +
+  `<rect x="-4" y="-22" width="8" height="10" class="bellBase"/><ellipse cy="-24" rx="10" ry="4" class="bellBase"/>`
+
+// The price board, chalk on green.
+const CHALK = (() => {
+  const row = (y: number, a: string, b: string) =>
+    `<text x="18" y="${y}" class="hand chalk" font-size="17">${a}</text><text x="152" y="${y}" text-anchor="end" class="hand chalk" font-size="17">${b}</text>`
+
+  return (
+    `<rect width="170" height="200" rx="4" class="chalkFrame"/><rect x="9" y="9" width="152" height="182" class="chalkBoard"/>` +
+    `<text x="85" y="42" text-anchor="middle" class="mk chalk" font-size="22">tarifs</text>` +
+    `<path d="M40 50 q45 6 90 0" class="chalkLine"/>` +
+    row(84, 'adulte', '12 €') + row(114, 'enfant', '6 €') + row(144, 'pass jour', '25 €') +
+    `<text x="18" y="176" class="hand chalk2" font-size="13">+ café offert</text>`
+  )
+})()
+
 // ---------- the two edges ----------
 
-// Left band. On a common window about 370 of its 540 units show beside the
-// conversation; the rest slides under the frosted column.
 const LEFT =
-  // a phone checking a ticket at the gate; the scan line runs while Claude works
-  `<g transform="translate(28 84) rotate(-4)" filter="url(#sh)">` +
-  `<rect width="178" height="340" rx="26" class="phone"/><rect x="10" y="12" width="158" height="316" rx="18" class="screen"/>` +
-  `<rect x="66" y="20" width="46" height="8" rx="4" class="phone"/>` +
-  `<text x="89" y="62" text-anchor="middle" class="type scrInk" font-size="12" letter-spacing="1">CONTRÔLE D’ACCÈS</text>` +
-  `<g transform="translate(39 84)">` + qr(10, 10, 80, 17) +
-  `<path d="M0 22 V0 H22 M78 0 H100 V22 M100 78 V100 H78 M22 100 H0 V78" class="frame"/>` +
-  `<rect x="-4" width="108" height="3" rx="1.5" class="laser"/></g>` +
-  `<rect x="34" y="214" width="110" height="38" rx="19" class="okPill"/>` +
-  `<path d="M52 233 l7 7 l13 -15" class="okTick"/>` +
-  `<text x="80" y="240" class="hand okInk" font-size="20">valide</text>` +
-  `<text x="89" y="284" text-anchor="middle" class="type scrInk2" font-size="11">2 adultes · 14:30</text>` +
-  `<text x="89" y="304" text-anchor="middle" class="type scrInk2" font-size="11">porte 2</text></g>` +
-  tape(78, 72, 86, 24, 6, '#e7cf86', 11) +
-  // an entry ticket with its stub and QR code
-  `<g transform="translate(36 500) rotate(3)" filter="url(#sh)">` +
-  `<path d="M0 0 H330 V56 a12 12 0 0 0 0 24 V150 H0 V80 a12 12 0 0 0 0 -24 Z" class="ticket"/>` +
-  `<path d="M232 10 V140" class="perfLine" stroke-dasharray="3 5"/>` +
-  `<text x="20" y="32" class="type tk" font-size="12" letter-spacing="1">BILLET · ADULTE</text>` +
-  `<text x="20" y="84" class="hand tkInk" font-size="34">visite guidée</text>` +
-  `<text x="20" y="116" class="type tk" font-size="12">séance 14:30 · porte 2</text>` +
-  `<text x="20" y="136" class="type tk" font-size="12">N° 0417</text>` +
-  `<rect x="246" y="38" width="72" height="72" fill="#fbf7ee"/>` + qr(250, 42, 64, 29) + `</g>` +
-  pin(196, 506, '#e2b45c') +
-  // fern sprig, under the card
-  `<g transform="translate(24 980) rotate(-60)">${fern()}</g>` +
-  // index card
-  `<g transform="translate(150 768) rotate(-3)" filter="url(#sh)">` +
-  `<rect width="214" height="166" class="card"/><path d="M0 40 H214" stroke="#e08a8a" stroke-width="1.4"/>` +
-  [62, 87, 112, 137].map(y => `<path d="M0 ${y} H214" stroke="#a8c4dc" stroke-width="1"/>`).join('') +
-  `<text x="16" y="30" class="mk ink" font-size="22">aujourd’hui</text>` +
-  ([['scanner les billets', true], ['ouvrir la caisse', true], ['un café ?', false]] as const)
-    .map(([words, done], i) =>
-      `<rect x="16" y="${47 + i * 25}" width="12" height="12" fill="none" class="penS"/>` +
-      (done ? `<path d="M17 ${53 + i * 25} l4 5 l9 -11" class="tick"/>` : '') +
-      `<text x="37" y="${58 + i * 25}" class="hand ink" font-size="17">${words}</text>`)
-    .join('') +
-  `</g>` +
-  pin(266, 772, '#3f6fb3') +
-  // the till receipt, dropped over the card's corner
-  `<g transform="translate(14 694) rotate(-5)" filter="url(#sh)">${RECEIPT}</g>` +
-  tape(36, 686, 56, 18, -10, '#acd0ec', 41) +
-  // the "open" sign on its pin, swaying
-  `<g transform="translate(298 112)"><g class="sway">` +
-  `<path d="M0 0 L-40 74 M0 0 L40 74" class="twine"/>` +
-  `<g filter="url(#sh)"><rect x="-56" y="70" width="112" height="72" rx="8" class="sign"/>` +
-  `<rect x="-50" y="76" width="100" height="60" rx="5" fill="none" class="signLine"/>` +
-  `<circle cx="-40" cy="78" r="3" class="hole"/><circle cx="40" cy="78" r="3" class="hole"/>` +
-  `<text y="114" text-anchor="middle" class="mk signInk" font-size="25">ouvert</text>` +
-  `<text y="130" text-anchor="middle" class="hand signInk" font-size="14">9h · 18h</text></g>` +
-  `</g>${pin(0, 0, '#c8423b')}</g>`
+  // the departures board, hung on two nails
+  `<g transform="translate(26 70)" filter="url(#sh)">${FLAPS}</g>` +
+  pin(46, 76, '#9aa3ab') + pin(326, 76, '#9aa3ab') +
+  // the ticket roll
+  `<g transform="translate(96 340)" filter="url(#sh)">${ROLL}</g>` +
+  // the price board
+  `<g transform="translate(190 326) rotate(2)" filter="url(#sh)">${CHALK}</g>` +
+  pin(276, 330, '#c8423b') +
+  // the receipt and the bell on the counter
+  `<g transform="translate(196 700) rotate(-4)" filter="url(#sh)">${RECEIPT}</g>` +
+  `<g transform="translate(96 860)">${BELL}</g>` +
+  `<text x="40" y="940" class="hand ink" font-size="17" transform="rotate(-4 40 940)">sonnez svp</text>`
 
-// Right band, drawn from x=0 at the band's left; what matters sits right of 170.
 const RIGHT =
-  // sticky note and its clip
-  `<g transform="translate(300 92) rotate(4)" filter="url(#sh)">` +
-  `<path d="M0 0 H200 V172 L176 196 H0 Z" class="sticky"/><path d="M200 172 L176 196 L180 176 Z" class="stickyFold"/>` +
-  `<text x="18" y="42" class="mk ink" font-size="22">à retenir :</text>` +
-  `<path d="M18 50 q 50 6 104 -2" class="penS" fill="none"/>` +
-  `<text x="18" y="88" class="mk ink" font-size="20">faire simple</text>` +
-  `<text x="18" y="120" class="mk ink" font-size="20">pour rester</text>` +
-  `<text x="18" y="152" class="mk ink" font-size="20">efficace.</text>` +
-  `<text x="116" y="170" class="hand ink2" font-size="15">— Moka</text></g>` +
-  `<path d="M336 76 v56 a10 10 0 0 0 20 0 v-62 a15 15 0 0 0 -30 0 v54" class="clip" transform="translate(120 0) rotate(4 336 76)"/>` +
+  // the enamel sign
+  `<g transform="translate(190 60)" filter="url(#sh)"><rect width="310" height="72" rx="12" class="enamel"/>` +
+  `<rect x="7" y="7" width="296" height="58" rx="8" fill="none" class="enamelLine"/>` +
+  `<text x="155" y="46" text-anchor="middle" class="type enamelInk" font-size="22" letter-spacing="4">BILLETTERIE</text></g>` +
+  // the clock, on its rod from the sign
+  `<g transform="translate(400 300)" filter="url(#sh)">${CLOCK}</g>` +
   // the Moka bean as an enamel pin
-  `<g transform="translate(232 178) scale(1.1)" filter="url(#sh)">${BEAN}</g>` +
-  // a postcard: a belfry against the evening sky
-  `<g transform="translate(186 322) rotate(-5)" filter="url(#sh)">` +
-  `<rect width="300" height="226" class="photo"/><rect x="14" y="14" width="272" height="160" fill="url(#dusk)"/>` +
-  `<circle cx="214" cy="112" r="26" fill="#f7d58a" opacity=".9"/>` +
-  `<path d="M14 150 Q 90 128 160 142 T 286 134 V174 H14 Z" fill="#6b4a3a"/>` +
-  `<path d="M96 174 V96 H90 L110 58 L130 96 H124 V174 Z M104 70 h12 v-26 l-6 -12 l-6 12 Z" fill="#3b2a24"/>` +
-  `<path d="M40 174 V132 H72 V174 Z M150 174 V124 H190 V174 Z M42 132 L56 118 L70 132 M152 124 L170 108 L188 124" fill="#3b2a24"/>` +
-  `<rect x="106" y="106" width="8" height="12" rx="4" class="cabin"/>` +
-  `<text x="22" y="204" class="hand ink2" font-size="17">bons baisers de</text>` +
-  `<text x="150" y="208" class="mk ink" font-size="21">Saint-Quentin</text></g>` +
-  tape(170, 318, 72, 23, -38, '#f2a7b5', 4) +
-  pin(452, 328, '#4f8a5b') +
-  // the town map and the wristband
-  `<g transform="translate(186 586) rotate(6) scale(.74)" filter="url(#sh)">${MAP}</g>` +
-  pin(198, 590, '#c8423b') +
-  `<g transform="translate(232 790) rotate(-14)" filter="url(#sh)">${WRISTBAND}</g>` +
-  // stamps
-  stamps(296, 570) +
-  // the house colors, a strip along the foot
-  `<g transform="translate(176 870) rotate(-7)" filter="url(#sh)">` +
+  `<g transform="translate(232 260) scale(1.1)" filter="url(#sh)">${BEAN}</g>` +
+  // the ticket window
+  `<g transform="translate(206 420)" filter="url(#sh)">${WINDOW}</g>` +
+  // the wristband and the house colors on the counter
+  `<g transform="translate(250 760) rotate(-10)" filter="url(#sh)">${WRISTBAND}</g>` +
+  `<g transform="translate(176 870) rotate(-4)" filter="url(#sh)">` +
   `<rect width="290" height="82" class="card"/>` +
   ([['#f3e6cc', 'crème'], ['#c98b4f', 'caramel'], ['#e2b45c', 'or'], ['#8a5a36', 'moka'], ['#3b2a20', 'café']] as const)
     .map(([c, name], i) => `<rect x="${8 + i * 56}" y="8" width="50" height="48" fill="${c}"/><text x="${10 + i * 56}" y="72" class="type pencil" font-size="10.5">${name}</text>`)
     .join('') +
-  `</g>` +
-  tape(300, 858, 64, 21, 4, '#f3d27a', 21) +
-  // lavender
-  `<g transform="translate(496 1000) rotate(-6)">${lavender()}</g>` +
-  tape(458, 898, 66, 21, -24, '#c7b8e6', 31)
+  `</g>`
 
 // The strip of paper the conversation is written on: torn down both sides,
 // a fixed width in screen points, centred under the words whatever the
@@ -488,7 +530,7 @@ const DEFS =
   `<feComponentTransfer><feFuncA type="linear" slope=".28"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>` +
   `<radialGradient id="pinShade" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".25"/><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></radialGradient>` +
   PERF +
-  `<pattern id="corkTex" width="160" height="160" patternUnits="userSpaceOnUse">${GRAINS}</pattern>` +
+  `<pattern id="corkTex" width="160" height="160" patternUnits="userSpaceOnUse">${WOOD}</pattern>` +
   `<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e2b45c"/><stop offset="1" stop-color="#b98a55"/></linearGradient>` +
   `<linearGradient id="dusk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b6f9c"/><stop offset=".6" stop-color="#e9a06b"/><stop offset="1" stop-color="#f3cf8f"/></linearGradient>` +
   `<radialGradient id="bulbGlow"><stop offset="0" stop-color="#ffd27a" stop-opacity=".85"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>` +
@@ -502,7 +544,7 @@ const STYLE_FIXED =
   `.paperBody{fill:url(#paperG);stroke:var(--fringe);stroke-width:2.4}.pp{stop-color:var(--paper)}.pe{stop-color:var(--paperEdge)}.fiber{stroke:var(--fiber);opacity:.35}` +
   `.cork{fill:var(--cork)}.g1{fill:var(--g1);opacity:.55}.g2{fill:var(--g2);opacity:.5}` +
   `.sheet{fill:#f7f6f1}.photo{fill:#fbf8f1}.card{fill:#fdfcf6}.kraft{fill:#c99c63}.sticky{fill:#f4dc84}.stickyFold{fill:#d9bd60}.ticket{fill:#e2b45c}.perfLine{stroke:#fbf7ee;stroke-width:2;opacity:.8}` +
-  `.ink{fill:#2c3a55}.ink2{fill:#5a6377}.pencil{fill:#5d6670}.tk{fill:#4a3220}.tkInk{fill:#3b2a20}.phone{fill:#2a2420}.screen{fill:#f8f3e8}.scrInk{fill:#8a5a36}.scrInk2{fill:#6b5e4d}.frame{fill:none;stroke:#e2b45c;stroke-width:4;stroke-linecap:round}.qr{fill:#2b231b;color:#2b231b}.laser{fill:#e0473c;opacity:.85}.okPill{fill:#dcebd2}.okTick{fill:none;stroke:#3f7a35;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.okInk{fill:#2f5f27}.sign{fill:#b8352e}.signLine{stroke:#fbe9d6;stroke-width:1.5;opacity:.7}.signInk{fill:#fbf1e2}.beanS{stroke:#f6ecd8}.receipt{fill:#fbfaf4}.rcp{fill:#3d3a36}.rcpHand{fill:#8a5a36}.rcpLine{stroke:#8d877c;stroke-width:1;stroke-dasharray:2 3}.map{fill:#f3ead2}.fold{stroke:#cdbf9f;stroke-width:1}.river{fill:none;stroke:#8fb5cf;stroke-width:7;opacity:.8}.block{fill:#d9cba9}.walk{fill:none;stroke:#b8352e;stroke-width:1.8}.mapPin{fill:#c8423b}.wrist{fill:none;stroke:#e2b45c}.wristLine{fill:none;stroke:#fbf1e2;stroke-width:1.2;opacity:.8}.wristClip{fill:#8a5a36}.wristInk{fill:#5a3a22}` +
+  `.ink{fill:#2c3a55}.ink2{fill:#5a6377}.pencil{fill:#5d6670}.tk{fill:#4a3220}.tkInk{fill:#3b2a20}.phone{fill:#2a2420}.screen{fill:#f8f3e8}.scrInk{fill:#8a5a36}.scrInk2{fill:#6b5e4d}.frame{fill:none;stroke:#e2b45c;stroke-width:4;stroke-linecap:round}.qr{fill:#2b231b;color:#2b231b}.laser{fill:#e0473c;opacity:.85}.okPill{fill:#dcebd2}.okTick{fill:none;stroke:#3f7a35;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.okInk{fill:#2f5f27}.sign{fill:#b8352e}.signLine{stroke:#fbe9d6;stroke-width:1.5;opacity:.7}.signInk{fill:#fbf1e2}.beanS{stroke:#f6ecd8}.seam{stroke:#5a3a20;stroke-width:2.2;opacity:.55}.grain{fill:none;stroke-width:1.4}.g1.grain{stroke:var(--g1);fill:none;opacity:.5}.g2.grain{stroke:var(--g2);fill:none;opacity:.45}.knot{opacity:.5}.board{fill:#24211e}.cell{fill:#34302b}.cellCut{stroke:#141210;stroke-width:1.2}.flapInk{fill:#f3ead6}.boardHead{fill:#e2b45c}.lampOk{fill:#7bc46b}.flap{transform-box:fill-box;transform-origin:50% 50%}.rollTk{fill:#f1d9a4}.rollCut{stroke:#b58a4a;stroke-width:1.2;stroke-dasharray:3 3}.rollInk{fill:#7a3a22}.rollEdge{stroke:#c89e5e;stroke-width:1.5}.rollCore{fill:#8a5a36}.rod{stroke:#3b3631;stroke-width:5}.clockRim{fill:#2f2b27}.clockFace{fill:#fbf7ee}.tickMark{stroke:#2b231b}.hand{stroke:#2b231b;stroke-linecap:round}.secHand{stroke:#c8423b;stroke-width:2}.secDot{fill:#c8423b}.sec{transform-box:view-box;transform-origin:0 0}.frame2{fill:#6b4527}.glass{fill:#cfe0e6;opacity:.85}.bars{stroke:#8a6a3c;stroke-width:4}.shine{stroke:#fff;stroke-width:6;opacity:.35}.sill{fill:#7d5432}.plate{fill:#1f3f73}.plateInk{fill:#f3ead6}.openTag{fill:#b8352e}.openInk{fill:#fbf1e2}.bellBase{fill:#3b3631}.bellDome{fill:#d9ab5c}.bellShine{fill:none;stroke:#fff3d0;stroke-width:4;opacity:.6;stroke-linecap:round}.chalkFrame{fill:#8a5a36}.chalkBoard{fill:#2f3f36}.chalk{fill:#f1eee4}.chalk2{fill:#e8d9a8}.chalkLine{fill:none;stroke:#f1eee4;stroke-width:1.6;opacity:.8}.enamel{fill:#1f3f73}.enamelLine{stroke:#f3ead6;stroke-width:2}.enamelInk{fill:#f3ead6}.receipt{fill:#fbfaf4}.rcp{fill:#3d3a36}.rcpHand{fill:#8a5a36}.rcpLine{stroke:#8d877c;stroke-width:1;stroke-dasharray:2 3}.map{fill:#f3ead2}.fold{stroke:#cdbf9f;stroke-width:1}.river{fill:none;stroke:#8fb5cf;stroke-width:7;opacity:.8}.block{fill:#d9cba9}.walk{fill:none;stroke:#b8352e;stroke-width:1.8}.mapPin{fill:#c8423b}.wrist{fill:none;stroke:#e2b45c}.wristLine{fill:none;stroke:#fbf1e2;stroke-width:1.2;opacity:.8}.wristClip{fill:#8a5a36}.wristInk{fill:#5a3a22}` +
   `.pen{stroke:#2c3a55}.penS{stroke:#2c3a55;stroke-width:1.4}.tick{fill:none;stroke:#c0392b;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}` +
   `.twine{fill:none;stroke:#8b6b45;stroke-width:1.6}.hole{fill:var(--cork)}.ring{stroke:#a88050;stroke-width:2}` +
   `.string{fill:none;stroke:#b8352e;stroke-width:1.7;opacity:.9}.clip{fill:none;stroke:#9aa3ab;stroke-width:2.6;stroke-linecap:round}` +
@@ -512,6 +554,7 @@ const STYLE_FIXED =
   `@keyframes sway{from{transform:rotate(-6deg)}to{transform:rotate(6deg)}}` +
   `@keyframes twinkle{0%,100%{opacity:var(--idle)}50%{opacity:calc(var(--idle) * .1)}}` +
   `@keyframes scan{0%,100%{transform:translateY(4px)}50%{transform:translateY(94px)}}` +
+  `@keyframes flip{0%,86%,100%{transform:scaleY(1)}93%{transform:scaleY(.08)}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes feed{from{transform:translateY(-50px)}to{transform:translateY(0)}}` +
   `@keyframes chase{0%,100%{opacity:.25}35%{opacity:1}}` +
   `.star{animation:star 4s ease-in-out infinite}.s1{animation-duration:5.5s;animation-delay:-2s}.s2{animation-duration:7s;animation-delay:-4s}` +
   `@keyframes star{0%,100%{opacity:1}50%{opacity:.35}}`
@@ -522,11 +565,11 @@ export const drawBoard = (live: Live) => {
   const at = (period: number) => `${r1(-(live.seconds % period))}s`
   const motion = live.isBusy
     ? `.sway{animation:sway 2.8s ease-in-out ${at(5.6)} infinite alternate}` +
-      `.glow{animation:chase 1.6s ease-in-out infinite}.bulb{fill:#ffd98f}.laser{animation:scan 1.4s ease-in-out ${at(1.4)} infinite}`
+      `.glow{animation:chase 1.6s ease-in-out infinite}.bulb{fill:#ffd98f}.flap{animation:flip 1.1s linear infinite}.sec{animation:spin 6s linear ${at(6)} infinite}.feed{animation:feed 2s ease-in-out ${at(2)} infinite}`
     : `.sway{animation:sway 5s ease-in-out ${at(10)} infinite alternate}` +
       `.glow{opacity:var(--idle)}.b0{animation:twinkle 3.1s ease-in-out infinite}.b1{animation:twinkle 4.3s ease-in-out infinite}` +
       `.b2{animation:twinkle 5.7s ease-in-out infinite}.b3{animation:twinkle 7.9s ease-in-out infinite}` +
-      `.laser{animation:scan 4.5s ease-in-out ${at(4.5)} infinite}`
+      `.f0{animation:flip 9s linear infinite}.sec{animation:spin 60s steps(60) ${at(60)} infinite}`
   const style =
     `:root{${vars(LIGHT)}}@media (prefers-color-scheme:dark){:root{${vars(DARK)}}}` +
     STYLE_FIXED + motion + EDGES +
@@ -553,4 +596,4 @@ export const drawBoard = (live: Live) => {
   )
 }
 
-export const ALT = 'A cork board of tourism keepsakes along both edges: a phone scanning a ticket, an entry ticket, an open sign, a postcard and stamps, under a string of small lights that run while Claude works'
+export const ALT = 'A wood-paneled ticket counter: a split-flap board of the next sessions, a roll of entry tickets, a chalk price board, a station clock, the ticket window and a desk bell, under a string of small lights'
