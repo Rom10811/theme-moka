@@ -19,6 +19,8 @@ export type Live = {
   isBusy: boolean
   /** Seconds since the epoch, so a redraw resumes the motion where it was. */
   seconds: number
+  /** The same instant on the wall clock: seconds since the epoch, shifted by the local offset. */
+  localSeconds: number
 }
 
 const random = (seed: number) => {
@@ -47,7 +49,7 @@ export const USED: Record<'hand' | 'mk' | 'type', string> = { hand: '', mk: '', 
 const TEXT = /<text ([^>]*class="(hand|mk|type)[^"]*"[^>]*)>([^<]+)<\/text>/g
 
 /** The board's labels turned into outlines, and the letters they use. */
-const outline = (svg: string) => {
+export const outline = (svg: string) => {
   const used = new Map<string, string>()
   const body = svg.replace(TEXT, (_, attrs: string, pen: keyof typeof GLYPHS, words: string) => {
     const a = Object.fromEntries([...attrs.matchAll(/([\w-]+)="([^"]*)"/g)].map(([, k, v]) => [k, v]))
@@ -326,7 +328,7 @@ const flapRow = (y: number, words: string, first: number) =>
 const FLAPS =
   `<rect width="320" height="196" rx="8" class="board"/>` +
   `<text x="160" y="26" text-anchor="middle" class="type boardHead" font-size="11" letter-spacing="2">PROCHAINES SÉANCES</text>` +
-  flapRow(40, '14:30 VISITE', 0) + flapRow(84, '15:00 ATELIER', 12) + flapRow(128, '16:15 CONCERT', 25) +
+  flapRow(40, '14:30 DRAGON', 0) + flapRow(84, '15:00 VARAN', 12) + flapRow(128, '16:15 VISITE', 25) +
   `<circle cx="16" cy="178" r="4" class="lampOk"/><text x="28" y="182" class="type boardHead" font-size="9">À L’HEURE</text>`
 
 // A roll of numbered entry tickets, the strip hanging down from it.
@@ -361,8 +363,9 @@ const CLOCK = (() => {
 
   return (
     `<path d="M0 -150 V-78" class="rod"/><circle r="76" class="clockRim"/><circle r="70" class="clockFace"/>${ticks}` +
-    `<path d="M0 6 V-38" class="hand" stroke-width="6" transform="rotate(-30)"/><path d="M0 8 V-56" class="hand" stroke-width="4" transform="rotate(150)"/>` +
-    `<g class="sec"><path d="M0 14 V-58" class="secHand"/><circle cy="-46" r="5" class="secDot"/></g><circle r="5" class="secDot"/>`
+    // Each hand turns about the axle: its own box, the axle's place in it.
+    `<g class="hh"><path d="M0 6 V-38" class="hand" stroke-width="6"/></g><g class="mm"><path d="M0 8 V-56" class="hand" stroke-width="4"/></g>` +
+    `<g class="ss"><path d="M0 14 V-58" class="secHand"/><circle cy="-46" r="5" class="secDot"/></g><circle r="5" class="secDot"/>`
   )
 })()
 
@@ -394,8 +397,43 @@ const CHALK = (() => {
     `<rect width="170" height="200" rx="4" class="chalkFrame"/><rect x="9" y="9" width="152" height="182" class="chalkBoard"/>` +
     `<text x="85" y="42" text-anchor="middle" class="mk chalk" font-size="22">tarifs</text>` +
     `<path d="M40 50 q45 6 90 0" class="chalkLine"/>` +
-    row(84, 'adulte', '12 €') + row(114, 'enfant', '6 €') + row(144, 'pass jour', '25 €') +
-    `<text x="18" y="176" class="hand chalk2" font-size="13">+ café offert</text>`
+    row(84, 'dragon', '9,50 €') + row(114, '4 à 11 ans', '7,50 €') + row(144, '0 à 3 ans', 'gratuit') +
+    `<text x="18" y="176" class="hand chalk2" font-size="13">balade de 45 min</text>`
+  )
+})()
+
+// The blueprint of a walking mechanical dragon: white lines on blue, jointed
+// legs, folded wings, a deck on its back and vents that breathe mist.
+const BLUEPRINT = (() => {
+  let grid = ''
+
+  for (let x = 20; x < 320; x += 20) grid += `M${x} 0 V220 `
+  for (let y = 20; y < 220; y += 20) grid += `M0 ${y} H320 `
+  const leg = (x: number, k: number) =>
+    `<path d="M${x} 132 L${x + k} 162 L${x - 4} 190 h14" class="bpLine"/><circle cx="${x}" cy="132" r="5" class="bpLine"/><circle cx="${x + k}" cy="162" r="4" class="bpLine"/>`
+  const gear = (cx: number, cy: number, r: number) =>
+    `<circle cx="${cx}" cy="${cy}" r="${r}" class="bpLine"/><circle cx="${cx}" cy="${cy}" r="${r + 3}" class="bpLine" stroke-dasharray="2.5 2.5"/><circle cx="${cx}" cy="${cy}" r="2" class="bpFill"/>`
+
+  return (
+    `<rect width="320" height="220" class="bp"/><path d="${grid}" class="bpGrid"/>` +
+    `<rect x="6" y="6" width="308" height="208" class="bpLine" fill="none"/>` +
+    // tail, back, neck and head
+    `<path d="M14 150 C 40 150 52 128 74 112 C 104 92 150 86 196 96 C 222 102 236 112 246 104 C 256 94 258 70 270 60 L 300 64 L 302 74 L 284 78 L 296 84 L 280 88 C 270 92 262 112 252 128 C 236 136 210 140 180 140 L 96 140 C 76 140 50 150 14 150 Z" class="bpLine"/>` +
+    `<circle cx="282" cy="68" r="2.4" class="bpFill"/><path d="M262 60 L254 46 L270 58" class="bpLine"/>` +
+    // the deck and its rail
+    `<path d="M104 92 H196 M104 92 V80 H196 V96 M120 80 V92 M140 80 V92 M160 80 V92 M180 80 V92" class="bpLine"/>` +
+    // folded wing
+    `<path d="M150 100 L120 60 L176 70 Z M120 60 L150 100 M140 64 L154 96 M160 68 L160 98" class="bpLine"/>` +
+    leg(110, -10) + leg(150, -8) + leg(206, 8) + leg(236, 10) +
+    gear(130, 120, 9) + gear(186, 118, 7) +
+    // vents, and the mist they breathe
+    `<circle cx="96" cy="102" r="3" class="bpLine"/><circle cx="214" cy="104" r="3" class="bpLine"/>` +
+    `<g class="mist"><circle cx="96" cy="88" r="7"/><circle cx="104" cy="78" r="5"/><circle cx="214" cy="90" r="7"/><circle cx="222" cy="80" r="5"/></g>` +
+    // dimensions and title
+    `<path d="M14 204 H302 M14 198 V210 M302 198 V210" class="bpLine"/>` +
+    `<text x="158" y="200" text-anchor="middle" class="type bpInk" font-size="9" letter-spacing="1">25 M</text>` +
+    `<text x="16" y="28" class="hand bpInk" font-size="16">bestiaire mécanique</text>` +
+    `<text x="304" y="28" text-anchor="end" class="type bpInk" font-size="9" letter-spacing="1">PLANCHE 1</text>`
   )
 })()
 
@@ -426,14 +464,9 @@ const RIGHT =
   `<g transform="translate(232 260) scale(1.1)" filter="url(#sh)">${BEAN}</g>` +
   // the ticket window
   `<g transform="translate(206 420)" filter="url(#sh)">${WINDOW}</g>` +
-  // the wristband and the house colors on the counter
-  `<g transform="translate(250 760) rotate(-10)" filter="url(#sh)">${WRISTBAND}</g>` +
-  `<g transform="translate(176 870) rotate(-4)" filter="url(#sh)">` +
-  `<rect width="290" height="82" class="card"/>` +
-  ([['#f3e6cc', 'crème'], ['#c98b4f', 'caramel'], ['#e2b45c', 'or'], ['#8a5a36', 'moka'], ['#3b2a20', 'café']] as const)
-    .map(([c, name], i) => `<rect x="${8 + i * 56}" y="8" width="50" height="48" fill="${c}"/><text x="${10 + i * 56}" y="72" class="type pencil" font-size="10.5">${name}</text>`)
-    .join('') +
-  `</g>`
+  // the dragon's blueprint, pinned at its corners
+  `<g transform="translate(186 740) rotate(-3)" filter="url(#sh)">${BLUEPRINT}</g>` +
+  pin(196, 750, '#e2b45c') + pin(496, 734, '#e2b45c')
 
 // The strip of paper the conversation is written on: torn down both sides,
 // a fixed width in screen points, centred under the words whatever the
@@ -544,7 +577,7 @@ const STYLE_FIXED =
   `.paperBody{fill:url(#paperG);stroke:var(--fringe);stroke-width:2.4}.pp{stop-color:var(--paper)}.pe{stop-color:var(--paperEdge)}.fiber{stroke:var(--fiber);opacity:.35}` +
   `.cork{fill:var(--cork)}.g1{fill:var(--g1);opacity:.55}.g2{fill:var(--g2);opacity:.5}` +
   `.sheet{fill:#f7f6f1}.photo{fill:#fbf8f1}.card{fill:#fdfcf6}.kraft{fill:#c99c63}.sticky{fill:#f4dc84}.stickyFold{fill:#d9bd60}.ticket{fill:#e2b45c}.perfLine{stroke:#fbf7ee;stroke-width:2;opacity:.8}` +
-  `.ink{fill:#2c3a55}.ink2{fill:#5a6377}.pencil{fill:#5d6670}.tk{fill:#4a3220}.tkInk{fill:#3b2a20}.phone{fill:#2a2420}.screen{fill:#f8f3e8}.scrInk{fill:#8a5a36}.scrInk2{fill:#6b5e4d}.frame{fill:none;stroke:#e2b45c;stroke-width:4;stroke-linecap:round}.qr{fill:#2b231b;color:#2b231b}.laser{fill:#e0473c;opacity:.85}.okPill{fill:#dcebd2}.okTick{fill:none;stroke:#3f7a35;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.okInk{fill:#2f5f27}.sign{fill:#b8352e}.signLine{stroke:#fbe9d6;stroke-width:1.5;opacity:.7}.signInk{fill:#fbf1e2}.beanS{stroke:#f6ecd8}.seam{stroke:#5a3a20;stroke-width:2.2;opacity:.55}.grain{fill:none;stroke-width:1.4}.g1.grain{stroke:var(--g1);fill:none;opacity:.5}.g2.grain{stroke:var(--g2);fill:none;opacity:.45}.knot{opacity:.5}.board{fill:#24211e}.cell{fill:#34302b}.cellCut{stroke:#141210;stroke-width:1.2}.flapInk{fill:#f3ead6}.boardHead{fill:#e2b45c}.lampOk{fill:#7bc46b}.flap{transform-box:fill-box;transform-origin:50% 50%}.rollTk{fill:#f1d9a4}.rollCut{stroke:#b58a4a;stroke-width:1.2;stroke-dasharray:3 3}.rollInk{fill:#7a3a22}.rollEdge{stroke:#c89e5e;stroke-width:1.5}.rollCore{fill:#8a5a36}.rod{stroke:#3b3631;stroke-width:5}.clockRim{fill:#2f2b27}.clockFace{fill:#fbf7ee}.tickMark{stroke:#2b231b}.hand{stroke:#2b231b;stroke-linecap:round}.secHand{stroke:#c8423b;stroke-width:2}.secDot{fill:#c8423b}.sec{transform-box:view-box;transform-origin:0 0}.frame2{fill:#6b4527}.glass{fill:#cfe0e6;opacity:.85}.bars{stroke:#8a6a3c;stroke-width:4}.shine{stroke:#fff;stroke-width:6;opacity:.35}.sill{fill:#7d5432}.plate{fill:#1f3f73}.plateInk{fill:#f3ead6}.openTag{fill:#b8352e}.openInk{fill:#fbf1e2}.bellBase{fill:#3b3631}.bellDome{fill:#d9ab5c}.bellShine{fill:none;stroke:#fff3d0;stroke-width:4;opacity:.6;stroke-linecap:round}.chalkFrame{fill:#8a5a36}.chalkBoard{fill:#2f3f36}.chalk{fill:#f1eee4}.chalk2{fill:#e8d9a8}.chalkLine{fill:none;stroke:#f1eee4;stroke-width:1.6;opacity:.8}.enamel{fill:#1f3f73}.enamelLine{stroke:#f3ead6;stroke-width:2}.enamelInk{fill:#f3ead6}.receipt{fill:#fbfaf4}.rcp{fill:#3d3a36}.rcpHand{fill:#8a5a36}.rcpLine{stroke:#8d877c;stroke-width:1;stroke-dasharray:2 3}.map{fill:#f3ead2}.fold{stroke:#cdbf9f;stroke-width:1}.river{fill:none;stroke:#8fb5cf;stroke-width:7;opacity:.8}.block{fill:#d9cba9}.walk{fill:none;stroke:#b8352e;stroke-width:1.8}.mapPin{fill:#c8423b}.wrist{fill:none;stroke:#e2b45c}.wristLine{fill:none;stroke:#fbf1e2;stroke-width:1.2;opacity:.8}.wristClip{fill:#8a5a36}.wristInk{fill:#5a3a22}` +
+  `.ink{fill:#2c3a55}.ink2{fill:#5a6377}.pencil{fill:#5d6670}.tk{fill:#4a3220}.tkInk{fill:#3b2a20}.phone{fill:#2a2420}.screen{fill:#f8f3e8}.scrInk{fill:#8a5a36}.scrInk2{fill:#6b5e4d}.frame{fill:none;stroke:#e2b45c;stroke-width:4;stroke-linecap:round}.qr{fill:#2b231b;color:#2b231b}.laser{fill:#e0473c;opacity:.85}.okPill{fill:#dcebd2}.okTick{fill:none;stroke:#3f7a35;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.okInk{fill:#2f5f27}.sign{fill:#b8352e}.signLine{stroke:#fbe9d6;stroke-width:1.5;opacity:.7}.signInk{fill:#fbf1e2}.beanS{stroke:#f6ecd8}.seam{stroke:#5a3a20;stroke-width:2.2;opacity:.55}.grain{fill:none;stroke-width:1.4}.g1.grain{stroke:var(--g1);fill:none;opacity:.5}.g2.grain{stroke:var(--g2);fill:none;opacity:.45}.knot{opacity:.5}.board{fill:#24211e}.cell{fill:#34302b}.cellCut{stroke:#141210;stroke-width:1.2}.flapInk{fill:#f3ead6}.boardHead{fill:#e2b45c}.lampOk{fill:#7bc46b}.flap{transform-box:fill-box;transform-origin:50% 50%}.rollTk{fill:#f1d9a4}.rollCut{stroke:#b58a4a;stroke-width:1.2;stroke-dasharray:3 3}.rollInk{fill:#7a3a22}.rollEdge{stroke:#c89e5e;stroke-width:1.5}.rollCore{fill:#8a5a36}.rod{stroke:#3b3631;stroke-width:5}.clockRim{fill:#2f2b27}.clockFace{fill:#fbf7ee}.tickMark{stroke:#2b231b}.hand{stroke:#2b231b;stroke-linecap:round}.secHand{stroke:#c8423b;stroke-width:2}.secDot{fill:#c8423b}.hh,.mm,.ss{transform-box:fill-box}.hh{transform-origin:50% 86.36%}.mm{transform-origin:50% 87.5%}.ss{transform-origin:50% 80.56%}.frame2{fill:#6b4527}.glass{fill:#cfe0e6;opacity:.85}.bars{stroke:#8a6a3c;stroke-width:4}.shine{stroke:#fff;stroke-width:6;opacity:.35}.sill{fill:#7d5432}.plate{fill:#1f3f73}.plateInk{fill:#f3ead6}.openTag{fill:#b8352e}.openInk{fill:#fbf1e2}.bellBase{fill:#3b3631}.bellDome{fill:#d9ab5c}.bellShine{fill:none;stroke:#fff3d0;stroke-width:4;opacity:.6;stroke-linecap:round}.chalkFrame{fill:#8a5a36}.chalkBoard{fill:#2f3f36}.chalk{fill:#f1eee4}.chalk2{fill:#e8d9a8}.chalkLine{fill:none;stroke:#f1eee4;stroke-width:1.6;opacity:.8}.bp{fill:#24507e}.bpGrid{fill:none;stroke:#cfe3f5;stroke-width:.6;opacity:.25}.bpLine{fill:none;stroke:#eef6fc;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}.bpFill{fill:#eef6fc}.bpInk{fill:#eef6fc}.mist{fill:#eef6fc;opacity:.35;transform-box:fill-box;transform-origin:50% 100%}.enamel{fill:#1f3f73}.enamelLine{stroke:#f3ead6;stroke-width:2}.enamelInk{fill:#f3ead6}.receipt{fill:#fbfaf4}.rcp{fill:#3d3a36}.rcpHand{fill:#8a5a36}.rcpLine{stroke:#8d877c;stroke-width:1;stroke-dasharray:2 3}.map{fill:#f3ead2}.fold{stroke:#cdbf9f;stroke-width:1}.river{fill:none;stroke:#8fb5cf;stroke-width:7;opacity:.8}.block{fill:#d9cba9}.walk{fill:none;stroke:#b8352e;stroke-width:1.8}.mapPin{fill:#c8423b}.wrist{fill:none;stroke:#e2b45c}.wristLine{fill:none;stroke:#fbf1e2;stroke-width:1.2;opacity:.8}.wristClip{fill:#8a5a36}.wristInk{fill:#5a3a22}` +
   `.pen{stroke:#2c3a55}.penS{stroke:#2c3a55;stroke-width:1.4}.tick{fill:none;stroke:#c0392b;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}` +
   `.twine{fill:none;stroke:#8b6b45;stroke-width:1.6}.hole{fill:var(--cork)}.ring{stroke:#a88050;stroke-width:2}` +
   `.string{fill:none;stroke:#b8352e;stroke-width:1.7;opacity:.9}.clip{fill:none;stroke:#9aa3ab;stroke-width:2.6;stroke-linecap:round}` +
@@ -554,7 +587,7 @@ const STYLE_FIXED =
   `@keyframes sway{from{transform:rotate(-6deg)}to{transform:rotate(6deg)}}` +
   `@keyframes twinkle{0%,100%{opacity:var(--idle)}50%{opacity:calc(var(--idle) * .1)}}` +
   `@keyframes scan{0%,100%{transform:translateY(4px)}50%{transform:translateY(94px)}}` +
-  `@keyframes flip{0%,86%,100%{transform:scaleY(1)}93%{transform:scaleY(.08)}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes feed{from{transform:translateY(-50px)}to{transform:translateY(0)}}` +
+  `@keyframes flip{0%,86%,100%{transform:scaleY(1)}93%{transform:scaleY(.08)}}@keyframes puff{0%,100%{opacity:.1;transform:translateY(4px) scale(.8)}50%{opacity:.6;transform:translateY(-4px) scale(1.15)}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes feed{from{transform:translateY(-50px)}to{transform:translateY(0)}}` +
   `@keyframes chase{0%,100%{opacity:.25}35%{opacity:1}}` +
   `.star{animation:star 4s ease-in-out infinite}.s1{animation-duration:5.5s;animation-delay:-2s}.s2{animation-duration:7s;animation-delay:-4s}` +
   `@keyframes star{0%,100%{opacity:1}50%{opacity:.35}}`
@@ -565,14 +598,20 @@ export const drawBoard = (live: Live) => {
   const at = (period: number) => `${r1(-(live.seconds % period))}s`
   const motion = live.isBusy
     ? `.sway{animation:sway 2.8s ease-in-out ${at(5.6)} infinite alternate}` +
-      `.glow{animation:chase 1.6s ease-in-out infinite}.bulb{fill:#ffd98f}.flap{animation:flip 1.1s linear infinite}.sec{animation:spin 6s linear ${at(6)} infinite}.feed{animation:feed 2s ease-in-out ${at(2)} infinite}`
+      `.glow{animation:chase 1.6s ease-in-out infinite}.bulb{fill:#ffd98f}.flap{animation:flip 1.1s linear infinite}.mist{animation:puff 1.4s ease-in-out infinite}.feed{animation:feed 2s ease-in-out ${at(2)} infinite}`
     : `.sway{animation:sway 5s ease-in-out ${at(10)} infinite alternate}` +
       `.glow{opacity:var(--idle)}.b0{animation:twinkle 3.1s ease-in-out infinite}.b1{animation:twinkle 4.3s ease-in-out infinite}` +
       `.b2{animation:twinkle 5.7s ease-in-out infinite}.b3{animation:twinkle 7.9s ease-in-out infinite}` +
-      `.f0{animation:flip 9s linear infinite}.sec{animation:spin 60s steps(60) ${at(60)} infinite}`
+      `.f0{animation:flip 9s linear infinite}.mist{animation:puff 6s ease-in-out infinite}`
+  // The station clock shows the real time: each hand starts where the wall
+  // clock is and turns on from there.
+  const wall = (period: number) => `${r1(-(live.localSeconds % period))}s`
+  const hands =
+    `.hh{animation:spin 43200s linear ${wall(43200)} infinite}.mm{animation:spin 3600s linear ${wall(3600)} infinite}` +
+    `.ss{animation:spin 60s steps(60) ${wall(60)} infinite}`
   const style =
     `:root{${vars(LIGHT)}}@media (prefers-color-scheme:dark){:root{${vars(DARK)}}}` +
-    STYLE_FIXED + motion + EDGES +
+    STYLE_FIXED + motion + hands + EDGES +
     ``
   const band = (cls: string, content: string) =>
     cls === 'L' ? `<g class="L">${content}</g>` : `<g class="R" transform="translate(${W - BAND} 0)">${content}</g>`
@@ -596,4 +635,4 @@ export const drawBoard = (live: Live) => {
   )
 }
 
-export const ALT = 'A wood-paneled ticket counter: a split-flap board of the next sessions, a roll of entry tickets, a chalk price board, a station clock, the ticket window and a desk bell, under a string of small lights'
+export const ALT = 'A wood-paneled ticket counter: a split-flap board announcing the dragon, a roll of entry tickets, a chalk price board, a station clock on the real time, the ticket window, a desk bell and the blueprint of a mechanical dragon breathing mist'

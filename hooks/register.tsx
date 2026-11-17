@@ -4,7 +4,7 @@ import type { EngineInterface, Register, ThemeSetArgs } from 'claude-code'
 import { ALT, drawBoard } from './board'
 import { compact } from './compact'
 import { makeColors } from './make-colors.js'
-import { cardColor, cardCorner, cardFoot, cardTopMid, doodle, pin, tapeBand } from './paper'
+import { doodle, pin, tapeBand, ticketBody, ticketFootLeft, ticketFootMid, ticketFootRight, ticketHeadLeft, ticketHeadMid, ticketHeadRight } from './paper'
 
 const PLUGIN = 'moka-tourisme'
 const SCENE = 'cork'
@@ -65,6 +65,23 @@ const seedOf = (id: string) => {
   return (h >>> 0) % 100000
 }
 
+// The clock on the wall shows the time where the team works.
+const ZONE = 'Europe/Paris'
+
+/** The zone's offset from UTC at that instant, in seconds; 0 when it can't be read. */
+const offsetSeconds = (seconds: number) => {
+  try {
+    const at = new Date(seconds * 1000)
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: ZONE, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }).formatToParts(at)
+    const get = (type: string) => Number(parts.find(p => p.type === type)?.value ?? 0)
+    const wall = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'))
+
+    return Math.round((wall - at.getTime()) / 1000)
+  } catch {
+    return -new Date(seconds * 1000).getTimezoneOffset() * 60
+  }
+}
+
 const working = async ($: EngineInterface, isBusy: boolean) => {
   if ((await read($, busy)) !== isBusy) {
     await update($, busy, () => isBusy)
@@ -97,8 +114,9 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // Each block of a reply on its own torn scrap, taped at both corners, with
-  // an ink doodle beside it. The desktop app only: the terminal draws no images.
+  // Each reply printed on an entry ticket: its numbered band, the body, and
+  // the stub below a perforation. The desktop app only: the terminal draws
+  // no images.
   on('ui.render', { component: 'AssistantMessage', plugin: '*' }, async ($, e, next) => {
     if (e.surface !== 'desktop') {
       return next(e)
@@ -114,19 +132,23 @@ export const register: Register = on => {
           <Svg source={doodle(seed)} alt="doodle" width={28} height={28} />
         </Box>
         <Box flexDirection="column" flexGrow={1} flexShrink={1}>
-        <Box flexDirection="row">
-          <Svg source={cardCorner(seed, 'left')} alt="tape" width={84} height={24} />
-          <Box flexGrow={1} flexShrink={1} overflow="hidden">
-            <Svg source={cardTopMid(seed)} alt="torn paper" height={24} />
+          <Box flexDirection="row">
+            <Svg source={ticketHeadLeft(seed)} alt="ticket number" width={200} height={30} />
+            <Box flexGrow={1} flexShrink={1} overflow="hidden">
+              <Svg source={ticketHeadMid()} alt="ticket band" height={30} />
+            </Box>
+            <Svg source={ticketHeadRight()} alt="ticket band" width={90} height={30} />
           </Box>
-          <Svg source={cardCorner(seed, 'right')} alt="tape" width={84} height={24} />
-        </Box>
-        <Box backgroundColor={cardColor(seed)} paddingX="lg" paddingY="xs">
-          {reply}
-        </Box>
-        <Box overflow="hidden">
-          <Svg source={cardFoot(seed)} alt="torn paper" height={14} />
-        </Box>
+          <Box backgroundColor={ticketBody()} paddingX="lg" paddingY="xs">
+            {reply}
+          </Box>
+          <Box flexDirection="row">
+            <Svg source={ticketFootLeft(seed)} alt="ticket stub" width={160} height={40} />
+            <Box flexGrow={1} flexShrink={1} overflow="hidden">
+              <Svg source={ticketFootMid()} alt="ticket stub" height={40} />
+            </Box>
+            <Svg source={ticketFootRight()} alt="ticket stub" width={60} height={40} />
+          </Box>
         </Box>
       </Box>
     )
@@ -159,7 +181,8 @@ export const register: Register = on => {
       return next(e)
     }
     const { Svg } = $.ui.resolve(e)
-    const source = compact(drawBoard({ isBusy: await read($, busy), seconds: (await $.clock.now()) / 1000 }))
+    const seconds = (await $.clock.now()) / 1000
+    const source = compact(drawBoard({ isBusy: await read($, busy), seconds, localSeconds: seconds + offsetSeconds(seconds) }))
 
     return <Svg source={source} alt={ALT} isInteractive />
   })

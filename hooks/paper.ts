@@ -1,3 +1,4 @@
+import { outline } from './board'
 // The paper pieces the conversation is drawn on, scrapbook style: each reply
 // on its own scrap (kraft, manila, rose, sage), torn at top and
 // bottom and held by two strips of washi tape in one of five colors, with a
@@ -164,3 +165,63 @@ export const doodle = (seed: number) =>
   `<style>g{stroke:#8a5a36}@media (prefers-color-scheme:dark){g{stroke:#e2b45c}}</style>` +
   `<g fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" transform="rotate(${r1((random(seed + 5)() - 0.5) * 16)} 14 14)">` +
   `${DOODLES[(seed >> 3) % DOODLES.length]}</g></svg>`
+
+// ---------- replies as entry tickets ----------
+// Each reply is printed on a ticket: a gold band with its number across the
+// top, a pale gold body, and a stub torn along a perforation at the foot, with
+// a barcode. The band and the stub are SVG pieces, the body a Box.
+
+const GOLD = '#e2b45c'
+const GOLD_A = 0x26
+const TICKET =
+  `<style>.band{fill:${GOLD}}.bandInk{fill:#3b2a20}.perf{stroke:#a87a35;stroke-width:1.6;stroke-dasharray:4 4}.bar{fill:#5a4027}` +
+  `@media (prefers-color-scheme:dark){.band{fill:#c99a45}.perf{stroke:#e2b45c}.bar{fill:#e8d3a8}}</style>`
+const bodyFill = `fill="${GOLD}" fill-opacity="${(GOLD_A / 255).toFixed(3)}"`
+
+/** The ticket body's color, behind the reply. */
+export const ticketBody = () => `${GOLD}${hex2(GOLD_A)}`
+
+/** The ticket's number, the same for a reply every time it is drawn. */
+const number = (seed: number) => String(1000 + (seed % 9000))
+
+export const ticketHeadLeft = (seed: number) =>
+  outline(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="30" viewBox="0 0 200 30"><defs></defs>${TICKET}` +
+    `<path d="M10 0 H200 V30 H0 V10 A10 10 0 0 1 10 0 Z" class="band"/>` +
+    `<text x="16" y="20" class="type bandInk" font-size="11" letter-spacing="1">BILLET · N° ${number(seed)}</text></svg>`,
+  )
+
+export const ticketHeadMid = () =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="4000" height="30" viewBox="0 0 1000 30" preserveAspectRatio="none">${TICKET}<rect width="1000" height="30" class="band"/></svg>`
+
+export const ticketHeadRight = () =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="90" height="30" viewBox="0 0 90 30">${TICKET}` +
+  `<path d="M0 0 H80 A10 10 0 0 1 90 10 V30 H0 Z" class="band"/>` +
+  `<circle cx="22" cy="15" r="4" class="bandInk" opacity=".35"/><circle cx="40" cy="15" r="4" class="bandInk" opacity=".35"/><circle cx="58" cy="15" r="4" class="bandInk" opacity=".35"/></svg>`
+
+/** The foot's left piece: a notch at the perforation, the stub's corner and its barcode. */
+export const ticketFootLeft = (seed: number) => {
+  const next = random(seed + 11)
+  let bars = ''
+  let x = 18
+
+  while (x < 150) {
+    const w = next() < 0.5 ? 1.5 : 3
+    bars += `<rect x="${r1(x)}" y="18" width="${w}" height="14" class="bar"/>`
+    x += w + 1.5 + Math.round(next() * 2)
+  }
+
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="40" viewBox="0 0 160 40">${TICKET}` +
+    `<path d="M0 0 H160 V40 H10 A10 10 0 0 1 0 30 V16 A6 6 0 0 0 0 4 Z" ${bodyFill}/>` +
+    `<path d="M8 10 H160" class="perf"/>${bars}</svg>`
+  )
+}
+
+export const ticketFootMid = () =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="4000" height="40" viewBox="0 0 4000 40">${TICKET}` +
+  `<rect width="4000" height="40" ${bodyFill}/><path d="M0 10 H4000" class="perf"/></svg>`
+
+export const ticketFootRight = () =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40" viewBox="0 0 60 40">${TICKET}` +
+  `<path d="M0 0 H60 V4 A6 6 0 0 0 60 16 V30 A10 10 0 0 1 50 40 H0 Z" ${bodyFill}/><path d="M0 10 H52" class="perf"/></svg>`
