@@ -1,0 +1,5 @@
+{
+  "name": "theme-moka",
+  "owner": { "name": "Rom10811" },
+  "plugins": [{ "name": "moka-tourisme", "source": "./" }]
+}

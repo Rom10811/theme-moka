@@ -1,0 +1,1 @@
+{ "name": "moka-tourisme", "version": "0.1.0", "description": "Moka Tourisme: the pinboard cork, pinned with a day at a visitor site (phone scanning a ticket, entry ticket, open sign, postcard, stamps) in Moka gold.", "types": "./types/index.d.ts" }
