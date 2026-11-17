@@ -80,12 +80,12 @@ const outline = (svg: string) => {
 }
 
 const LIGHT = {
-  cork: '#bb8d5e', g1: '#d1a372', g2: '#9c7147', vig: '0.16',
+  cork: '#c7a479', g1: '#d8bb92', g2: '#a8875e', vig: '0.12',
   paper: '#f5ecda', paperEdge: '#e9dcc2', fringe: '#fcf8ee', fiber: '#b89a72', ring: '#8a5a2b', ringOp: '0.13',
   veil: '0', lamp: '0', bulb: '#ffd98f', idle: '1',
 }
 const DARK = {
-  cork: '#b88a5c', g1: '#cfa06f', g2: '#9b7047', vig: '0.55',
+  cork: '#bf9c70', g1: '#d2b48a', g2: '#a08058', vig: '0.5',
   paper: '#2b241d', paperEdge: '#231d17', fringe: '#4a3f33', fiber: '#8a7559', ring: '#c79a63', ringOp: '0.1',
   veil: '0.6', lamp: '0.3', bulb: '#ffd98f', idle: '1',
 }
@@ -292,106 +292,92 @@ const WRISTBAND =
   `<rect x="-14" y="14" width="28" height="18" rx="3" class="wristClip"/>` +
   `<text x="0" y="-34" text-anchor="middle" class="type wristInk" font-size="9" letter-spacing="1">PASS 1 JOUR</text>`
 
+// ---------- the journal's pieces ----------
+
+// A polaroid: a 200x170 picture over a hand-written caption.
+const polaroid = (scene: string, caption: string) =>
+  `<rect width="228" height="262" class="photo"/><svg x="14" y="14" width="200" height="180" viewBox="0 0 200 180">${scene}</svg>` +
+  `<text x="114" y="236" text-anchor="middle" class="hand ink" font-size="19">${caption}</text>`
+
+const CASTLE =
+  `<rect width="200" height="180" fill="url(#dusk)"/><circle cx="150" cy="70" r="22" fill="#f7d58a" opacity=".9"/>` +
+  `<path d="M0 140 Q 60 118 120 132 T 200 124 V180 H0 Z" fill="#6b4a3a"/>` +
+  `<path d="M40 180 V96 H34 V78 H46 V86 H56 V78 H68 V86 H78 V78 H90 V96 H84 V180 Z" fill="#3b2a24"/>` +
+  `<path d="M84 180 V118 H150 V180 Z M84 118 L117 96 L150 118 Z" fill="#3b2a24"/><rect x="56" y="110" width="10" height="16" rx="5" class="cabin"/>`
+
+const LIGHTHOUSE =
+  `<rect width="200" height="180" fill="url(#sky)"/><path d="M0 128 H200 V180 H0 Z" fill="#4f7d99"/>` +
+  `<path d="M0 138 q25 -6 50 0 t50 0 t50 0 t50 0 M0 154 q25 -6 50 0 t50 0 t50 0 t50 0" fill="none" stroke="#dbe9ef" stroke-width="2" opacity=".6"/>` +
+  `<path d="M108 138 L114 60 H134 L140 138 Z" fill="#f6ecdc"/><path d="M111 104 H137 M109 124 H139" stroke="#c9573f" stroke-width="10"/>` +
+  `<path d="M110 60 H138 V46 H110 Z M114 46 L124 34 L134 46" fill="#3b2a24"/>` +
+  `<path d="M138 52 L200 30 V74 Z" fill="#fff3c4" class="beam"/><path d="M96 138 h56 l-6 -8 h-44 Z" fill="#6b5a4a"/>`
+
+// A rubber stamp pressed in ink: double rings, a word, a date.
+const roundStamp = (word: string, date: string, cls: string) =>
+  `<g class="ink2Stamp ${cls}"><circle r="52" fill="none" stroke-width="3"/><circle r="44" fill="none" stroke-width="1.4"/>` +
+  `<path d="M-30 -18 H30 M-30 18 H30" stroke-width="1.4"/>` +
+  `<text y="7" text-anchor="middle" class="type stampInk" font-size="15" letter-spacing="2">${word}</text>` +
+  `<text y="34" text-anchor="middle" class="type stampInk" font-size="9" letter-spacing="1">${date}</text>` +
+  `<text y="-26" text-anchor="middle" class="type stampInk" font-size="9" letter-spacing="1">MOKA</text></g>`
+
+const rectStamp = (a: string, b: string, cls: string) =>
+  `<g class="ink2Stamp ${cls}"><rect x="-82" y="-30" width="164" height="60" rx="4" fill="none" stroke-width="3"/>` +
+  `<rect x="-76" y="-24" width="152" height="48" rx="2" fill="none" stroke-width="1.2"/>` +
+  `<text y="-3" text-anchor="middle" class="type stampInk" font-size="15" letter-spacing="2">${a}</text>` +
+  `<text y="17" text-anchor="middle" class="type stampInk" font-size="11" letter-spacing="2">${b}</text></g>`
+
+// A page of the journal, lined, written in ballpoint.
+const PAGE = (() => {
+  const lines = ['jour 1 :', 'visite guidée à 14h30,', 'billet scanné à l’entrée,', 'puis un café au port.', 'à refaire !']
+
+  return (
+    `<rect width="300" height="220" class="card"/>` +
+    [44, 78, 112, 146, 180].map(y => `<path d="M0 ${y + 6} H300" stroke="#a8c4dc" stroke-width="1"/>`).join('') +
+    `<path d="M34 0 V220" stroke="#e08a8a" stroke-width="1.4"/>` +
+    lines.map((t, i) => `<text x="${i ? 44 : 44}" y="${44 + i * 34}" class="${i === 0 || i === 4 ? 'mk' : 'hand'} ink" font-size="${i === 0 || i === 4 ? 21 : 18}">${t}</text>`).join('')
+  )
+})()
+
+// A compass rose, in ink.
+const COMPASS =
+  `<g class="pen" fill="none" stroke-width="1.6"><circle r="40"/><circle r="34" stroke-dasharray="2 4"/>` +
+  `<path d="M0 -52 L8 -8 L0 0 L-8 -8 Z M0 52 L8 8 L0 0 L-8 8 Z M-52 0 L-8 -8 L0 0 L-8 8 Z M52 0 L8 -8 L0 0 L8 8 Z"/></g>` +
+  `<path d="M0 -52 L8 -8 L0 0 Z" class="needle"/>` +
+  `<text y="-58" text-anchor="middle" class="mk ink" font-size="16">N</text>`
+
 // ---------- the two edges ----------
 
-// Left band. On a common window about 370 of its 540 units show beside the
-// conversation; the rest slides under the frosted column.
 const LEFT =
-  // a phone checking a ticket at the gate; the scan line runs while Claude works
-  `<g transform="translate(28 84) rotate(-4)" filter="url(#sh)">` +
-  `<rect width="178" height="340" rx="26" class="phone"/><rect x="10" y="12" width="158" height="316" rx="18" class="screen"/>` +
-  `<rect x="66" y="20" width="46" height="8" rx="4" class="phone"/>` +
-  `<text x="89" y="62" text-anchor="middle" class="type scrInk" font-size="12" letter-spacing="1">CONTRÔLE D’ACCÈS</text>` +
-  `<g transform="translate(39 84)">` + qr(10, 10, 80, 17) +
-  `<path d="M0 22 V0 H22 M78 0 H100 V22 M100 78 V100 H78 M22 100 H0 V78" class="frame"/>` +
-  `<rect x="-4" width="108" height="3" rx="1.5" class="laser"/></g>` +
-  `<rect x="34" y="214" width="110" height="38" rx="19" class="okPill"/>` +
-  `<path d="M52 233 l7 7 l13 -15" class="okTick"/>` +
-  `<text x="80" y="240" class="hand okInk" font-size="20">valide</text>` +
-  `<text x="89" y="284" text-anchor="middle" class="type scrInk2" font-size="11">2 adultes · 14:30</text>` +
-  `<text x="89" y="304" text-anchor="middle" class="type scrInk2" font-size="11">porte 2</text></g>` +
-  tape(78, 72, 86, 24, 6, '#e7cf86', 11) +
-  // an entry ticket with its stub and QR code
-  `<g transform="translate(36 500) rotate(3)" filter="url(#sh)">` +
+  `<g transform="translate(40 86) rotate(-5)" filter="url(#sh)">${polaroid(CASTLE, 'le château')}</g>` +
+  tape(110, 72, 90, 25, 4, '#e7cf86', 11) +
+  `<g transform="translate(316 170) rotate(-14)">${roundStamp('VISITÉ', '02 · 2026', 's0')}</g>` +
+  // the ticket stub, taped
+  `<g transform="translate(40 420) rotate(4) scale(.82)" filter="url(#sh)">` +
   `<path d="M0 0 H330 V56 a12 12 0 0 0 0 24 V150 H0 V80 a12 12 0 0 0 0 -24 Z" class="ticket"/>` +
   `<path d="M232 10 V140" class="perfLine" stroke-dasharray="3 5"/>` +
   `<text x="20" y="32" class="type tk" font-size="12" letter-spacing="1">BILLET · ADULTE</text>` +
   `<text x="20" y="84" class="hand tkInk" font-size="34">visite guidée</text>` +
   `<text x="20" y="116" class="type tk" font-size="12">séance 14:30 · porte 2</text>` +
-  `<text x="20" y="136" class="type tk" font-size="12">N° 0417</text>` +
   `<rect x="246" y="38" width="72" height="72" fill="#fbf7ee"/>` + qr(250, 42, 64, 29) + `</g>` +
-  pin(196, 506, '#e2b45c') +
-  // fern sprig, under the card
-  `<g transform="translate(24 980) rotate(-60)">${fern()}</g>` +
-  // index card
-  `<g transform="translate(150 768) rotate(-3)" filter="url(#sh)">` +
-  `<rect width="214" height="166" class="card"/><path d="M0 40 H214" stroke="#e08a8a" stroke-width="1.4"/>` +
-  [62, 87, 112, 137].map(y => `<path d="M0 ${y} H214" stroke="#a8c4dc" stroke-width="1"/>`).join('') +
-  `<text x="16" y="30" class="mk ink" font-size="22">aujourd’hui</text>` +
-  ([['scanner les billets', true], ['ouvrir la caisse', true], ['un café ?', false]] as const)
-    .map(([words, done], i) =>
-      `<rect x="16" y="${47 + i * 25}" width="12" height="12" fill="none" class="penS"/>` +
-      (done ? `<path d="M17 ${53 + i * 25} l4 5 l9 -11" class="tick"/>` : '') +
-      `<text x="37" y="${58 + i * 25}" class="hand ink" font-size="17">${words}</text>`)
-    .join('') +
-  `</g>` +
-  pin(266, 772, '#3f6fb3') +
-  // the till receipt, dropped over the card's corner
-  `<g transform="translate(14 694) rotate(-5)" filter="url(#sh)">${RECEIPT}</g>` +
-  tape(36, 686, 56, 18, -10, '#acd0ec', 41) +
-  // the "open" sign on its pin, swaying
-  `<g transform="translate(298 112)"><g class="sway">` +
-  `<path d="M0 0 L-40 74 M0 0 L40 74" class="twine"/>` +
-  `<g filter="url(#sh)"><rect x="-56" y="70" width="112" height="72" rx="8" class="sign"/>` +
-  `<rect x="-50" y="76" width="100" height="60" rx="5" fill="none" class="signLine"/>` +
-  `<circle cx="-40" cy="78" r="3" class="hole"/><circle cx="40" cy="78" r="3" class="hole"/>` +
-  `<text y="114" text-anchor="middle" class="mk signInk" font-size="25">ouvert</text>` +
-  `<text y="130" text-anchor="middle" class="hand signInk" font-size="14">9h · 18h</text></g>` +
-  `</g>${pin(0, 0, '#c8423b')}</g>`
+  tape(20, 430, 64, 21, -40, '#a8d3bf', 13) + tape(270, 520, 64, 21, -30, '#a8d3bf', 15) +
+  `<g transform="translate(220 560) rotate(-8)">${rectStamp('BILLET VALIDÉ', 'CONTRÔLE D’ACCÈS', 's1')}</g>` +
+  // the journal page
+  `<g transform="translate(40 690) rotate(-2)" filter="url(#sh)">${PAGE}</g>` +
+  tape(150, 680, 86, 24, 3, '#efb2ad', 17)
 
-// Right band, drawn from x=0 at the band's left; what matters sits right of 170.
 const RIGHT =
-  // sticky note and its clip
-  `<g transform="translate(300 92) rotate(4)" filter="url(#sh)">` +
-  `<path d="M0 0 H200 V172 L176 196 H0 Z" class="sticky"/><path d="M200 172 L176 196 L180 176 Z" class="stickyFold"/>` +
-  `<text x="18" y="42" class="mk ink" font-size="22">à retenir :</text>` +
-  `<path d="M18 50 q 50 6 104 -2" class="penS" fill="none"/>` +
-  `<text x="18" y="88" class="mk ink" font-size="20">faire simple</text>` +
-  `<text x="18" y="120" class="mk ink" font-size="20">pour rester</text>` +
-  `<text x="18" y="152" class="mk ink" font-size="20">efficace.</text>` +
-  `<text x="116" y="170" class="hand ink2" font-size="15">— Moka</text></g>` +
-  `<path d="M336 76 v56 a10 10 0 0 0 20 0 v-62 a15 15 0 0 0 -30 0 v54" class="clip" transform="translate(120 0) rotate(4 336 76)"/>` +
-  // the Moka bean as an enamel pin
-  `<g transform="translate(232 178) scale(1.1)" filter="url(#sh)">${BEAN}</g>` +
-  // a postcard: a belfry against the evening sky
-  `<g transform="translate(186 322) rotate(-5)" filter="url(#sh)">` +
-  `<rect width="300" height="226" class="photo"/><rect x="14" y="14" width="272" height="160" fill="url(#dusk)"/>` +
-  `<circle cx="214" cy="112" r="26" fill="#f7d58a" opacity=".9"/>` +
-  `<path d="M14 150 Q 90 128 160 142 T 286 134 V174 H14 Z" fill="#6b4a3a"/>` +
-  `<path d="M96 174 V96 H90 L110 58 L130 96 H124 V174 Z M104 70 h12 v-26 l-6 -12 l-6 12 Z" fill="#3b2a24"/>` +
-  `<path d="M40 174 V132 H72 V174 Z M150 174 V124 H190 V174 Z M42 132 L56 118 L70 132 M152 124 L170 108 L188 124" fill="#3b2a24"/>` +
-  `<rect x="106" y="106" width="8" height="12" rx="4" class="cabin"/>` +
-  `<text x="22" y="204" class="hand ink2" font-size="17">bons baisers de</text>` +
-  `<text x="150" y="208" class="mk ink" font-size="21">Saint-Quentin</text></g>` +
-  tape(170, 318, 72, 23, -38, '#f2a7b5', 4) +
-  pin(452, 328, '#4f8a5b') +
-  // the town map and the wristband
-  `<g transform="translate(186 586) rotate(6) scale(.74)" filter="url(#sh)">${MAP}</g>` +
-  pin(198, 590, '#c8423b') +
-  `<g transform="translate(232 790) rotate(-14)" filter="url(#sh)">${WRISTBAND}</g>` +
-  // stamps
-  stamps(296, 570) +
-  // the house colors, a strip along the foot
-  `<g transform="translate(176 870) rotate(-7)" filter="url(#sh)">` +
-  `<rect width="290" height="82" class="card"/>` +
-  ([['#f3e6cc', 'crème'], ['#c98b4f', 'caramel'], ['#e2b45c', 'or'], ['#8a5a36', 'moka'], ['#3b2a20', 'café']] as const)
-    .map(([c, name], i) => `<rect x="${8 + i * 56}" y="8" width="50" height="48" fill="${c}"/><text x="${10 + i * 56}" y="72" class="type pencil" font-size="10.5">${name}</text>`)
-    .join('') +
-  `</g>` +
-  tape(300, 858, 64, 21, 4, '#f3d27a', 21) +
-  // lavender
-  `<g transform="translate(496 1000) rotate(-6)">${lavender()}</g>` +
-  tape(458, 898, 66, 21, -24, '#c7b8e6', 31)
+  `<g transform="translate(226 100) rotate(6)" filter="url(#sh)">${polaroid(LIGHTHOUSE, 'le phare')}</g>` +
+  tape(300, 88, 90, 25, -6, '#c5b8e6', 19) +
+  `<g transform="translate(250 560) scale(1.05)" filter="url(#sh)">${BEAN}</g>` +
+  // the map, taped
+  `<g transform="translate(300 400) rotate(-4) scale(1.3)" filter="url(#sh)">${MAP}</g>` +
+  tape(290, 392, 60, 20, -30, '#acd0ec', 21) +
+  `<g transform="translate(300 730)">${COMPASS}</g>` +
+  `<g transform="translate(420 690) rotate(12)">${roundStamp('MERCI', 'À BIENTÔT', 's2')}</g>` +
+  // pressed lavender, taped across
+  `<g transform="translate(486 1000) rotate(-8)">${lavender()}</g>` +
+  tape(452, 880, 70, 22, 30, '#f3d27a', 23) +
+  `<g transform="translate(290 890) rotate(-6) scale(.9)" filter="url(#sh)">${WRISTBAND}</g>`
 
 // The strip of paper the conversation is written on: torn down both sides,
 // a fixed width in screen points, centred under the words whatever the
@@ -490,6 +476,7 @@ const DEFS =
   PERF +
   `<pattern id="corkTex" width="160" height="160" patternUnits="userSpaceOnUse">${GRAINS}</pattern>` +
   `<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e2b45c"/><stop offset="1" stop-color="#b98a55"/></linearGradient>` +
+  `<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fb3cf"/><stop offset="1" stop-color="#e9ddc4"/></linearGradient>` +
   `<linearGradient id="dusk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b6f9c"/><stop offset=".6" stop-color="#e9a06b"/><stop offset="1" stop-color="#f3cf8f"/></linearGradient>` +
   `<radialGradient id="bulbGlow"><stop offset="0" stop-color="#ffd27a" stop-opacity=".85"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>` +
   `<radialGradient id="lampG" cx=".5" cy="-.05" r=".85"><stop offset="0" stop-color="#ffbf6e" stop-opacity="1"/><stop offset=".55" stop-color="#ff9f4a" stop-opacity=".25"/><stop offset="1" stop-color="#ff9f4a" stop-opacity="0"/></radialGradient>` +
@@ -502,7 +489,7 @@ const STYLE_FIXED =
   `.paperBody{fill:url(#paperG);stroke:var(--fringe);stroke-width:2.4}.pp{stop-color:var(--paper)}.pe{stop-color:var(--paperEdge)}.fiber{stroke:var(--fiber);opacity:.35}` +
   `.cork{fill:var(--cork)}.g1{fill:var(--g1);opacity:.55}.g2{fill:var(--g2);opacity:.5}` +
   `.sheet{fill:#f7f6f1}.photo{fill:#fbf8f1}.card{fill:#fdfcf6}.kraft{fill:#c99c63}.sticky{fill:#f4dc84}.stickyFold{fill:#d9bd60}.ticket{fill:#e2b45c}.perfLine{stroke:#fbf7ee;stroke-width:2;opacity:.8}` +
-  `.ink{fill:#2c3a55}.ink2{fill:#5a6377}.pencil{fill:#5d6670}.tk{fill:#4a3220}.tkInk{fill:#3b2a20}.phone{fill:#2a2420}.screen{fill:#f8f3e8}.scrInk{fill:#8a5a36}.scrInk2{fill:#6b5e4d}.frame{fill:none;stroke:#e2b45c;stroke-width:4;stroke-linecap:round}.qr{fill:#2b231b;color:#2b231b}.laser{fill:#e0473c;opacity:.85}.okPill{fill:#dcebd2}.okTick{fill:none;stroke:#3f7a35;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.okInk{fill:#2f5f27}.sign{fill:#b8352e}.signLine{stroke:#fbe9d6;stroke-width:1.5;opacity:.7}.signInk{fill:#fbf1e2}.beanS{stroke:#f6ecd8}.receipt{fill:#fbfaf4}.rcp{fill:#3d3a36}.rcpHand{fill:#8a5a36}.rcpLine{stroke:#8d877c;stroke-width:1;stroke-dasharray:2 3}.map{fill:#f3ead2}.fold{stroke:#cdbf9f;stroke-width:1}.river{fill:none;stroke:#8fb5cf;stroke-width:7;opacity:.8}.block{fill:#d9cba9}.walk{fill:none;stroke:#b8352e;stroke-width:1.8}.mapPin{fill:#c8423b}.wrist{fill:none;stroke:#e2b45c}.wristLine{fill:none;stroke:#fbf1e2;stroke-width:1.2;opacity:.8}.wristClip{fill:#8a5a36}.wristInk{fill:#5a3a22}` +
+  `.ink{fill:#2c3a55}.ink2{fill:#5a6377}.pencil{fill:#5d6670}.tk{fill:#4a3220}.tkInk{fill:#3b2a20}.phone{fill:#2a2420}.screen{fill:#f8f3e8}.scrInk{fill:#8a5a36}.scrInk2{fill:#6b5e4d}.frame{fill:none;stroke:#e2b45c;stroke-width:4;stroke-linecap:round}.qr{fill:#2b231b;color:#2b231b}.laser{fill:#e0473c;opacity:.85}.okPill{fill:#dcebd2}.okTick{fill:none;stroke:#3f7a35;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.okInk{fill:#2f5f27}.sign{fill:#b8352e}.signLine{stroke:#fbe9d6;stroke-width:1.5;opacity:.7}.signInk{fill:#fbf1e2}.beanS{stroke:#f6ecd8}.ink2Stamp{stroke:currentColor;opacity:.72;transform-box:fill-box;transform-origin:50% 50%}.stampInk{fill:currentColor}.s0{color:#2f4a8a}.s1{color:#b8352e}.s2{color:#8a5a36}.needle{fill:#b8352e}.beam{opacity:.7}.receipt{fill:#fbfaf4}.rcp{fill:#3d3a36}.rcpHand{fill:#8a5a36}.rcpLine{stroke:#8d877c;stroke-width:1;stroke-dasharray:2 3}.map{fill:#f3ead2}.fold{stroke:#cdbf9f;stroke-width:1}.river{fill:none;stroke:#8fb5cf;stroke-width:7;opacity:.8}.block{fill:#d9cba9}.walk{fill:none;stroke:#b8352e;stroke-width:1.8}.mapPin{fill:#c8423b}.wrist{fill:none;stroke:#e2b45c}.wristLine{fill:none;stroke:#fbf1e2;stroke-width:1.2;opacity:.8}.wristClip{fill:#8a5a36}.wristInk{fill:#5a3a22}` +
   `.pen{stroke:#2c3a55}.penS{stroke:#2c3a55;stroke-width:1.4}.tick{fill:none;stroke:#c0392b;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}` +
   `.twine{fill:none;stroke:#8b6b45;stroke-width:1.6}.hole{fill:var(--cork)}.ring{stroke:#a88050;stroke-width:2}` +
   `.string{fill:none;stroke:#b8352e;stroke-width:1.7;opacity:.9}.clip{fill:none;stroke:#9aa3ab;stroke-width:2.6;stroke-linecap:round}` +
@@ -512,6 +499,7 @@ const STYLE_FIXED =
   `@keyframes sway{from{transform:rotate(-6deg)}to{transform:rotate(6deg)}}` +
   `@keyframes twinkle{0%,100%{opacity:var(--idle)}50%{opacity:calc(var(--idle) * .1)}}` +
   `@keyframes scan{0%,100%{transform:translateY(4px)}50%{transform:translateY(94px)}}` +
+  `@keyframes press{0%,100%{transform:scale(1);opacity:.72}45%{transform:scale(1.14);opacity:.25}55%{transform:scale(.97);opacity:.9}}@keyframes sweep{0%,100%{opacity:.15}50%{opacity:.8}}` +
   `@keyframes chase{0%,100%{opacity:.25}35%{opacity:1}}` +
   `.star{animation:star 4s ease-in-out infinite}.s1{animation-duration:5.5s;animation-delay:-2s}.s2{animation-duration:7s;animation-delay:-4s}` +
   `@keyframes star{0%,100%{opacity:1}50%{opacity:.35}}`
@@ -522,11 +510,11 @@ export const drawBoard = (live: Live) => {
   const at = (period: number) => `${r1(-(live.seconds % period))}s`
   const motion = live.isBusy
     ? `.sway{animation:sway 2.8s ease-in-out ${at(5.6)} infinite alternate}` +
-      `.glow{animation:chase 1.6s ease-in-out infinite}.bulb{fill:#ffd98f}.laser{animation:scan 1.4s ease-in-out ${at(1.4)} infinite}`
+      `.glow{animation:chase 1.6s ease-in-out infinite}.bulb{fill:#ffd98f}.ink2Stamp{animation:press 1.6s ease-in-out infinite}.s1{animation-delay:-.5s}.s2{animation-delay:-1s}.beam{animation:sweep 1.2s ease-in-out infinite}`
     : `.sway{animation:sway 5s ease-in-out ${at(10)} infinite alternate}` +
       `.glow{opacity:var(--idle)}.b0{animation:twinkle 3.1s ease-in-out infinite}.b1{animation:twinkle 4.3s ease-in-out infinite}` +
       `.b2{animation:twinkle 5.7s ease-in-out infinite}.b3{animation:twinkle 7.9s ease-in-out infinite}` +
-      `.laser{animation:scan 4.5s ease-in-out ${at(4.5)} infinite}`
+      `.beam{animation:sweep 5s ease-in-out infinite}`
   const style =
     `:root{${vars(LIGHT)}}@media (prefers-color-scheme:dark){:root{${vars(DARK)}}}` +
     STYLE_FIXED + motion + EDGES +
@@ -553,4 +541,4 @@ export const drawBoard = (live: Live) => {
   )
 }
 
-export const ALT = 'A cork board of tourism keepsakes along both edges: a phone scanning a ticket, an entry ticket, an open sign, a postcard and stamps, under a string of small lights that run while Claude works'
+export const ALT = 'A travel journal on kraft paper: polaroids of a castle and a lighthouse, a taped ticket, ink stamps, a map, a compass and a written page, under a string of small lights'
