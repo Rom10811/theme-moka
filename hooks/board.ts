@@ -381,12 +381,19 @@ const WINDOW =
   `<rect x="96" y="118" width="68" height="28" rx="4" class="openTag"/>` +
   `<text x="130" y="138" text-anchor="middle" class="hand openInk" font-size="17">ouvert</text>`
 
-// The front-desk bell.
-const BELL =
-  `<ellipse cx="0" cy="44" rx="58" ry="10" fill="#000" opacity=".2"/>` +
-  `<rect x="-56" y="28" width="112" height="16" rx="5" class="bellBase"/>` +
-  `<path d="M-46 30 A46 44 0 0 1 46 30 Z" class="bellDome"/><path d="M-26 6 A30 30 0 0 1 4 -10" class="bellShine"/>` +
-  `<rect x="-4" y="-22" width="8" height="10" class="bellBase"/><ellipse cy="-24" rx="10" ry="4" class="bellBase"/>`
+// A phone checking a ticket at the gate; the scan line runs while Claude works.
+const PHONE =
+  `<rect width="178" height="340" rx="26" class="phone"/><rect x="10" y="12" width="158" height="316" rx="18" class="screen"/>` +
+  `<rect x="66" y="20" width="46" height="8" rx="4" class="phone"/>` +
+  `<text x="89" y="62" text-anchor="middle" class="type scrInk" font-size="12" letter-spacing="1">CONTRÔLE D’ACCÈS</text>` +
+  `<g transform="translate(39 84)">` + qr(10, 10, 80, 17) +
+  `<path d="M0 22 V0 H22 M78 0 H100 V22 M100 78 V100 H78 M22 100 H0 V78" class="frame"/>` +
+  `<rect x="-4" width="108" height="3" rx="1.5" class="laser"/></g>` +
+  `<rect x="34" y="214" width="110" height="38" rx="19" class="okPill"/>` +
+  `<path d="M52 233 l7 7 l13 -15" class="okTick"/>` +
+  `<text x="80" y="240" class="hand okInk" font-size="20">valide</text>` +
+  `<text x="89" y="284" text-anchor="middle" class="type scrInk2" font-size="11">dragon · 14:30</text>` +
+  `<text x="89" y="304" text-anchor="middle" class="type scrInk2" font-size="11">2 adultes · 1 enfant</text>`
 
 // The price board, chalk on green.
 const CHALK = (() => {
@@ -448,10 +455,9 @@ const LEFT =
   // the price board
   `<g transform="translate(190 326) rotate(2)" filter="url(#sh)">${CHALK}</g>` +
   pin(276, 330, '#c8423b') +
-  // the receipt and the bell on the counter
+  // the receipt and the phone that scans the tickets
   `<g transform="translate(196 700) rotate(-4)" filter="url(#sh)">${RECEIPT}</g>` +
-  `<g transform="translate(96 860)">${BELL}</g>` +
-  `<text x="40" y="940" class="hand ink" font-size="17" transform="rotate(-4 40 940)">sonnez svp</text>`
+  `<g transform="translate(26 690) rotate(-5) scale(.86)" filter="url(#sh)">${PHONE}</g>`
 
 const RIGHT =
   // the enamel sign
@@ -598,11 +604,11 @@ export const drawBoard = (live: Live) => {
   const at = (period: number) => `${r1(-(live.seconds % period))}s`
   const motion = live.isBusy
     ? `.sway{animation:sway 2.8s ease-in-out ${at(5.6)} infinite alternate}` +
-      `.glow{animation:chase 1.6s ease-in-out infinite}.bulb{fill:#ffd98f}.flap{animation:flip 1.1s linear infinite}.mist{animation:puff 1.4s ease-in-out infinite}.feed{animation:feed 2s ease-in-out ${at(2)} infinite}`
+      `.glow{animation:chase 1.6s ease-in-out infinite}.bulb{fill:#ffd98f}.flap{animation:flip 1.1s linear infinite}.mist{animation:puff 1.4s ease-in-out infinite}.laser{animation:scan 1.4s ease-in-out ${at(1.4)} infinite}.feed{animation:feed 2s ease-in-out ${at(2)} infinite}`
     : `.sway{animation:sway 5s ease-in-out ${at(10)} infinite alternate}` +
       `.glow{opacity:var(--idle)}.b0{animation:twinkle 3.1s ease-in-out infinite}.b1{animation:twinkle 4.3s ease-in-out infinite}` +
       `.b2{animation:twinkle 5.7s ease-in-out infinite}.b3{animation:twinkle 7.9s ease-in-out infinite}` +
-      `.f0{animation:flip 9s linear infinite}.mist{animation:puff 6s ease-in-out infinite}`
+      `.f0{animation:flip 9s linear infinite}.mist{animation:puff 6s ease-in-out infinite}.laser{animation:scan 4.5s ease-in-out ${at(4.5)} infinite}`
   // The station clock shows the real time: each hand starts where the wall
   // clock is and turns on from there.
   const wall = (period: number) => `${r1(-(live.localSeconds % period))}s`
@@ -635,4 +641,4 @@ export const drawBoard = (live: Live) => {
   )
 }
 
-export const ALT = 'A wood-paneled ticket counter: a split-flap board announcing the dragon, a roll of entry tickets, a chalk price board, a station clock on the real time, the ticket window, a desk bell and the blueprint of a mechanical dragon breathing mist'
+export const ALT = 'A wood-paneled ticket counter: a split-flap board announcing the dragon, a roll of entry tickets, a chalk price board, a station clock on the real time, the ticket window, a phone scanning a ticket and the blueprint of a mechanical dragon breathing mist'
